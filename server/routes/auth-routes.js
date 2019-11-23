@@ -1,5 +1,7 @@
 const express = require("express");
 const axios = require("axios");
+const api = require("../../api/twitch-api");
+const channelModel = require("./../../database/models/channel-model");
 require("dotenv").config({ path: "./../.env" });
 
 const router = express.Router();
@@ -32,11 +34,29 @@ router.get("/callback", async (req, res) => {
     redirect_uri: redirectLocalPage
   });
   try {
-    const response = await axiosInstance.post(`/token?${sp}`);
-    const redirectURL = `${baseURL}/token?${sp}`;
-    res.json(response.data);
-  } catch (err) {
-    res.json(err);
+    const data = await axiosInstance.post(`/token?${sp}`);
+    const userData = await api.getUser(data.data.access_token);
+    const refreshToken = data.data.refresh_token;
+    const userId = userData.id;
+
+    var options = {
+      new: true,
+      upsert: true
+    };
+
+    await channelModel.findOneAndUpdate(
+      userId,
+      {
+        twitchId: userId,
+        refresh_token: refreshToken
+      },
+      options
+    );
+    res.redirect("/dashboard");
+  } catch (error) {
+    res.json({
+      message: error.message
+    });
   }
 });
 
