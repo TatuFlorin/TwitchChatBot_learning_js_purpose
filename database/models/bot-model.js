@@ -7,9 +7,31 @@ const BotSchema = new Schema({
     type: String,
     required: true
   },
-  enabled: {
-    type: Boolean,
-    default: false
+  name: {
+    type: String,
+    required: true
+  },
+  refresh_token: {
+    type: String,
+    required: true
+  },
+  channels: {
+    type: [
+      {
+        channelId: {
+          type: String,
+          required: true
+        },
+        login: {
+          type: String,
+          required: true
+        },
+        enabled: {
+          type: Boolean,
+          default: false
+        }
+      }
+    ]
   }
 });
 

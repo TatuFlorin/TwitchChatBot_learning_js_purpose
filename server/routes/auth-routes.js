@@ -1,7 +1,8 @@
 const express = require("express");
 const axios = require("axios");
-const api = require("../../api/twitch-api");
+const api = require("../../utils/twitch-api");
 const channelModel = require("./../../database/models/channel-model");
+const botModel = require("./../../database/models/bot-model");
 require("dotenv").config({ path: "./../.env" });
 
 const router = express.Router();
@@ -33,6 +34,7 @@ router.get("/callback", async (req, res) => {
     grant_type: "authorization_code",
     redirect_uri: redirectLocalPage
   });
+
   try {
     const data = await axiosInstance.post(`/token?${sp}`);
     const userData = await api.getUser(data.data.access_token);
@@ -52,6 +54,18 @@ router.get("/callback", async (req, res) => {
       },
       options
     );
+
+    const bot = await botModel.findOne();
+    const newChannel = { channelId: userId, login: userData.login };
+    const exist = bot.channels.find(x => (x.channelId = userId));
+    if (exist) {
+      console.log("channel exist!");
+    } else {
+      bot.channels.push(newChannel);
+      await botModel.findOneAndUpdate(userId, bot);
+      console.log(userId, userData);
+    }
+
     res.redirect("/dashboard");
   } catch (error) {
     res.json({
