@@ -1,9 +1,10 @@
 const express = require("express");
 const axios = require("axios");
-const api = require("../../utils/twitch-api");
-const channelModel = require("./../../database/models/channel-model");
-const botModel = require("./../../database/models/bot-model");
-require("dotenv").config({ path: "./../.env" });
+const api = require("./../utils/twitch-api");
+const channelModel = require("./../database/models/channel-model");
+const botModel = require("./../database/models/bot-model");
+const jwtInstance = require("./../utils/jwt");
+require("dotenv").config({ path: "./.env" });
 
 const router = express.Router();
 
@@ -58,6 +59,7 @@ router.get("/callback", async (req, res) => {
     const bot = await botModel.findOne();
     const newChannel = { channelId: userId, login: userData.login };
     const exist = bot.channels.find(x => (x.channelId = userId));
+
     if (exist) {
       console.log("channel exist!");
     } else {
@@ -65,8 +67,8 @@ router.get("/callback", async (req, res) => {
       await botModel.findOneAndUpdate(userId, bot);
       console.log(userId, userData);
     }
-
-    res.redirect("/dashboard");
+    const accessToken = jwtInstance.getToken({ data: userId });
+    res.json({ accesssToken: accessToken });
   } catch (error) {
     res.json({
       message: error.message
